@@ -58,7 +58,44 @@ Das wurde empirisch geprüft (siehe Abschnitt 3).
 | `letzte_3_monate_umsatz_eur_avg` | 600 | **Strukturell erklärbar (nach Korrektur):** identisch zu `vormonat_umsatz_eur` – der erste Monat eines Produkts kann keinen 3-Monats-Durchschnitt haben. **Export-Fehler behoben:** Ursprünglich waren bei 599 dieser 600 Zeilen trotzdem Werte eingetragen (die auch nicht dem eigenen Umsatz der Zeile entsprachen, also nicht plausibel herleitbar waren) – laut Projekt-Brief-Definition wurden diese auf NaN korrigiert (`src/data_management.py`, Schritt 12). |
 | `umsatz_eur` | 4 | Keine echten Fehlwerte, sondern die vier von uns korrigierten Ausreißer (zwei Platzhalterwerte 999.999 / 750.000, zwei negative Werte -1 / -150), die bewusst auf NaN gesetzt wurden statt die Zeilen zu löschen. |
 
-## 4. Hinweise für die weitere Verarbeitung (EDA / Modellierung)
+## 4. Ausreißer in der Zielvariable `umsatz_eur` (Detail)
+
+Bei der Untersuchung des bereinigten Datensatzes wurden vier Werte in
+der Zielvariable `umsatz_eur` identifiziert, die eindeutig nicht
+plausibel sind:
+
+| Produkt | Monat | Wert | Einordnung |
+|---|---|---|---|
+| PR-0486 | 08/2025 | 999.999,00 € | Platzhalter-/Erfassungsfehler (liegt mehr als 48-mal über dem nächsthöheren Wert im gesamten Datensatz) |
+| PR-0236 | 04/2025 | 750.000,00 € | Platzhalter-/Erfassungsfehler (liegt mehr als 36-mal über dem nächsthöheren Wert) |
+| PR-0334 | 03/2024 | -1,00 € | Negativer Umsatz ist fachlich nicht möglich |
+| PR-0545 | 07/2024 | -150,00 € | Negativer Umsatz ist fachlich nicht möglich |
+
+Zum Vergleich: Der nächsthöhere, plausible Umsatzwert im gesamten
+Datensatz liegt bei rund 20.600 €. Betroffen sind 4 von 14.400 Werten
+(ca. 0,03 %).
+
+**Entscheidung:** Die vier Werte wurden nicht gelöscht – das würde das
+jeweilige Produkt in diesem Monat komplett aus dem Datensatz
+verschwinden lassen –, sondern gezielt auf fehlend (`NaN`) gesetzt. So
+bleiben Produkt und Zeitpunkt sichtbar und können in der Modellierung
+bewusst behandelt werden (z. B. Ausschluss aus dem Training oder
+gezielte Imputation).
+
+**Prüfung auf Folgefehler:** Da `vormonat_umsatz_eur`,
+`letzte_3_monate_umsatz_eur_avg` und `vorjahr_monat_umsatz_eur`
+inhaltlich aus `umsatz_eur` abgeleitet sind, wurde zusätzlich geprüft,
+ob die vier fehlerhaften Werte auch dort auftauchen – im jeweiligen
+Folgemonat, in den beiden darauffolgenden Monaten (wegen des
+3-Monats-Durchschnitts) sowie im Folgejahr. Ergebnis: In keinem der 20
+geprüften Folgewerte (4 Ausreißer × 5 Prüfpunkte) trat der fehlerhafte
+Wert erneut auf. Die abgeleiteten Spalten basieren demnach auf den
+tatsächlichen, unverfälschten Umsätzen und mussten nicht zusätzlich
+korrigiert werden.
+
+*Quelle: `src/data_management.py`, Schritt 11.*
+
+## 5. Hinweise für die weitere Verarbeitung (EDA / Modellierung)
 
 - **Konstante Merkmale je Produkt:** `preis_eur`, `bewertungen_durchschnitt`
   und `bewertungen_anzahl` ändern sich in diesem Datensatz über die Zeit
