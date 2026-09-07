@@ -119,21 +119,28 @@ print(muster.value_counts())
 
 
 def monat_vereinheitlichen(wert):
-    """Wandelt 'monat' unabhaengig vom Ursprungsformat in 'MM.YYYY' um."""
+    """Wandelt 'monat' unabhaengig vom Ursprungsformat in 'YYYY-MM' um.
+
+    Das Format 'YYYY-MM' wird bewusst gewaehlt (statt z. B. 'MM.YYYY'):
+    Pandas liest 'MM.YYYY' beim erneuten Einlesen der CSV-Datei sonst als
+    Kommazahl ein (z. B. wird "01.2024" zu 1.2024), da der Punkt als
+    Dezimaltrenner interpretiert wird. 'YYYY-MM' ist dagegen eindeutig als
+    Text erkennbar und zusaetzlich chronologisch sortierbar.
+    """
     text = str(wert).replace("/", ".").replace("-", ".")
     erster_teil, zweiter_teil = text.split(".")
-    if len(erster_teil) == 4:          # Format war 'YYYY-MM' -> Reihenfolge tauschen
+    if len(erster_teil) == 4:          # Format war 'YYYY-MM' -> Reihenfolge bereits richtig
         jahr, monat_zahl = erster_teil, zweiter_teil
-    else:                               # Format war 'MM.YYYY' oder 'MM/YYYY'
+    else:                               # Format war 'MM.YYYY' oder 'MM/YYYY' -> Reihenfolge tauschen
         monat_zahl, jahr = erster_teil, zweiter_teil
-    return f"{int(monat_zahl):02d}.{jahr}"
+    return f"{jahr}-{int(monat_zahl):02d}"
 
 
 df_verkaufe_clean["monat"] = df_verkaufe_clean["monat"].apply(monat_vereinheitlichen)
 
 print("\nBeispiele nach der Vereinheitlichung:")
 print(df_verkaufe_clean["monat"].head(5))
-noch_abweichend = (~df_verkaufe_clean["monat"].str.match(r"^\d{2}\.\d{4}$")).sum()
+noch_abweichend = (~df_verkaufe_clean["monat"].str.match(r"^\d{4}-\d{2}$")).sum()
 print(f"Verbleibende, nicht konforme Werte: {noch_abweichend}")
 
 
