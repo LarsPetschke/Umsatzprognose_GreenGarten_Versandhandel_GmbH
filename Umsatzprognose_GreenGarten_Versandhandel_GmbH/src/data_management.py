@@ -91,12 +91,24 @@ print("\n=== Untersuchung abgeschlossen ===")
 #   11. Zwei unplausible Werte in 'umsatz_eur' (999.999 und 750.000)
 #       sowie zwei negative Werte (-1 und -150)
 #
-# Fehlende Werte in 'marketingbudget_eur', 'bewertungen_durchschnitt',
-# 'vormonat_umsatz_eur', 'letzte_3_monate_umsatz_eur_avg' und
-# 'vorjahr_monat_umsatz_eur' werden NICHT als Fehler behandelt, da sie
-# sich fachlich erklaeren lassen (z. B. keine Marketingkampagne, kein
-# Vorjahreswert bei neu eingefuehrten Produkten) und daher bewusst als
-# fehlend (NaN) erhalten bleiben.
+# Fehlende Werte in folgenden Spalten werden NICHT als Fehler behandelt
+# und bleiben bewusst als fehlend (NaN) erhalten - die genaue Ursache
+# wurde je Spalte einzeln geprueft:
+#
+#   - 'vormonat_umsatz_eur' (600 fehlend): strukturell bedingt, betrifft
+#     exakt den ersten Monat (2024-01) jedes der 600 Produkte, fuer den
+#     es keinen Vormonat gibt.
+#   - 'vorjahr_monat_umsatz_eur' (7.200 fehlend): strukturell bedingt,
+#     betrifft exakt alle Zeilen des Jahres 2024, da fuer 2024 kein
+#     Vorjahreswert im Datensatz vorhanden ist (Datensatz beginnt 2024).
+#   - 'bewertungen_durchschnitt' (576 fehlend): fehlt vollstaendig fuer
+#     einzelne Produkte (der Wert ist je Produkt konstant ueber alle
+#     Monate) - vermutlich Produkte ohne Kundenbewertungen.
+#   - 'marketingbudget_eur' (432 fehlend): keine erkennbare Systematik
+#     feststellbar (fehlt sowohl bei aktiver als auch bei inaktiver
+#     Kampagne, 'kampagne_aktiv'), daher als einfache Datenluecke
+#     eingestuft statt als inhaltlich begruendbar.
+#   - 'letzte_3_monate_umsatz_eur_avg' (1 fehlend): Einzelfall.
 #
 # Jedes Problem wird im Folgenden zunaechst anhand der Daten belegt und
 # direkt im Anschluss behoben. Die Originaldaten (df_verkaufe_raw)
