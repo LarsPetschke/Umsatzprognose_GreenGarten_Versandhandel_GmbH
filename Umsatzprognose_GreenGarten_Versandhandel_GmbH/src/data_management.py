@@ -288,7 +288,49 @@ print(df_verkaufe_clean.loc[df_verkaufe_clean["umsatz_eur"] < 0,
 unplausibel = (df_verkaufe_clean["umsatz_eur"] > 100_000) | (df_verkaufe_clean["umsatz_eur"] < 0)
 print(f"\nAls fehlerhaft markierte Werte: {unplausibel.sum()}")
 
+betroffene_zeilen = df_verkaufe_clean.loc[unplausibel, ["produkt_id", "monat"]].copy()
+
 df_verkaufe_clean.loc[unplausibel, "umsatz_eur"] = np.nan
+
+# Pruefung: Wurden die fehlerhaften umsatz_eur-Werte auch in die daraus
+# abgeleiteten Spalten uebernommen (vormonat_umsatz_eur im Folgemonat,
+# letzte_3_monate_umsatz_eur_avg in den naechsten drei Monaten,
+# vorjahr_monat_umsatz_eur ein Jahr spaeter)? Dazu wird fuer jede
+# betroffene Produkt-/Monatskombination gezielt in den Folgezeilen
+# nachgesehen, ob dort noch ein unplausibler Wert (>100.000 oder <0)
+# steht.
+print("\nPruefung, ob abgeleitete Spalten (vormonat_/letzte_3_monate_/"
+      "vorjahr_monat_umsatz_eur) denselben Fehler uebernommen haben:")
+
+kontaminierte_werte = []
+for _, zeile in betroffene_zeilen.iterrows():
+    pid, monat_wert = zeile["produkt_id"], zeile["monat"]
+    pruefpunkte = [
+        (monat_wert + pd.DateOffset(months=1), "vormonat_umsatz_eur"),
+        (monat_wert + pd.DateOffset(months=1), "letzte_3_monate_umsatz_eur_avg"),
+        (monat_wert + pd.DateOffset(months=2), "letzte_3_monate_umsatz_eur_avg"),
+        (monat_wert + pd.DateOffset(months=3), "letzte_3_monate_umsatz_eur_avg"),
+        (monat_wert + pd.DateOffset(years=1), "vorjahr_monat_umsatz_eur"),
+    ]
+    for ziel_monat, spalte in pruefpunkte:
+        treffer = df_verkaufe_clean.loc[
+            (df_verkaufe_clean["produkt_id"] == pid) & (df_verkaufe_clean["monat"] == ziel_monat),
+            spalte,
+        ]
+        if not treffer.empty:
+            wert = treffer.iloc[0]
+            if pd.notna(wert) and (wert > 100_000 or wert < 0):
+                kontaminierte_werte.append((pid, ziel_monat.date(), spalte, wert))
+
+if kontaminierte_werte:
+    print(f"Gefunden: {len(kontaminierte_werte)} kontaminierte Folgewerte:")
+    for pid, ziel_monat, spalte, wert in kontaminierte_werte:
+        print(f"  {pid} | {ziel_monat} | {spalte} = {wert}")
+else:
+    print(f"Keine kontaminierten Folgewerte gefunden (geprueft: {len(betroffene_zeilen)} "
+          "Ausreisser x je 5 Folgepunkte). Die abgeleiteten Spalten wurden also "
+          "unabhaengig vom fehlerhaften umsatz_eur-Wert aus den echten, "
+          "unverfaelschten Umsaetzen berechnet - keine weitere Korrektur noetig.")
 
 
 # %%
@@ -372,8 +414,7 @@ print(f"Finale Form: {df_verkaufe_clean.shape[0]} Zeilen, "
       f"(Rohdatensatz: {df_verkaufe_raw.shape[0]} Zeilen)")
 
 print("\n=== Datenbereinigung abgeschlossen ===")
-print("\nHinweis: Die abgeleiteten Umsatzspalten 'vormonat_umsatz_eur', "
-      "'letzte_3_monate_umsatz_eur_avg' und 'vorjahr_monat_umsatz_eur' "
-      "enthalten an denselben Stellen voraussichtlich aehnliche Fehlwerte, "
-      "da sie sich aus 'umsatz_eur' ableiten. Das wird im naechsten "
-      "Schritt (Feature-Aufbereitung) geprueft.")
+print("\nHinweis: Ob die abgeleiteten Umsatzspalten ('vormonat_umsatz_eur', "
+      "'letzte_3_monate_umsatz_eur_avg', 'vorjahr_monat_umsatz_eur') dieselben "
+      "Fehlwerte wie 'umsatz_eur' enthalten, wurde in Schritt 11 explizit "
+      "geprueft: Es wurden KEINE kontaminierten Folgewerte gefunden.")

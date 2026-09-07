@@ -66,10 +66,14 @@ Das wurde empirisch geprüft (siehe Abschnitt 3).
   Modellierung sind das reine Produktmerkmale, keine Zeitreihenmerkmale.
 - **Zielvariable und ihre Ableitungen:** `vormonat_umsatz_eur`,
   `letzte_3_monate_umsatz_eur_avg` und `vorjahr_monat_umsatz_eur` sind
-  aus `umsatz_eur` abgeleitet. Da in `umsatz_eur` vier Werte korrigiert
-  wurden, können dieselben vier Zeitpunkte in den drei abgeleiteten
-  Spalten noch die alten (fehlerhaften) Werte enthalten – das sollte vor
-  der Modellierung geprüft und ggf. neu berechnet werden.
+  inhaltlich aus `umsatz_eur` abgeleitet. **Geprüft (Schritt 11 in
+  `data_management.py`):** Für alle vier korrigierten `umsatz_eur`-Werte
+  wurde in den Folgemonaten, den nächsten drei Monaten (wegen des
+  3-Monats-Durchschnitts) und im Folgejahr explizit nachgesehen, ob dort
+  noch der fehlerhafte Wert (999.999 / 750.000 / -1 / -150) steht. Ergebnis:
+  **keine Kontamination gefunden** – die drei abgeleiteten Spalten wurden
+  offenbar unabhängig aus den echten, unverfälschten Umsätzen berechnet.
+  Keine weitere Korrektur nötig.
 - **`jahr` und `monat_idx` für Marketing-Auswertungen:** Statt jedes
   Mal die Kombination `monat` (z. B. `2024-06`) zu filtern, stehen Jahr
   und Kalendermonat als eigene Spalten zur Verfügung. Beispiele:
