@@ -9,7 +9,7 @@ Diese Beschreibung bezieht sich auf den **bereinigten** Datensatz.
 | Merkmal | Wert |
 |---|---|
 | Zeilen | 14.400 |
-| Spalten | 16 |
+| Spalten | 17 |
 | Ein Datensatz (eine Zeile) ist ... | **ein Produkt in einem Monat** |
 | Primärschlüssel (eindeutige Kombination) | `produkt_id` + `monat` |
 | Eindeutige Produkte | 600 (`PR-0000` bis `PR-0599`) |
@@ -35,8 +35,9 @@ Das wurde empirisch geprüft (siehe Abschnitt 3).
 | `preis_eur` | Zahl (float) | produktkonstant | Verkaufspreis in Euro (über den gesamten Zeitraum konstant je Produkt) | 0 | 1,50 – 143,50 |
 | `bewertungen_durchschnitt` | Zahl (float) | produktkonstant | Durchschnittliche Kundenbewertung | 576 | 1,5 – 5,0 |
 | `bewertungen_anzahl` | Zahl (int) | produktkonstant | Anzahl Kundenbewertungen | 0 | ca. 20 – 59 |
-| `monat` | Text | Schlüssel | Kalendermonat im Format `YYYY-MM` | 0 | `2024-01` … `2025-12` |
-| `monat_idx` | Zahl (int) | monatsvariabel | Monatsnummer innerhalb des Jahres (unabhängig vom Jahr) | 0 | 1 – 12 |
+| `monat` | Text | Schlüssel | Kalendermonat im Format `YYYY-MM` (Jahr und Monat kombiniert) | 0 | `2024-01` … `2025-12` |
+| `jahr` | Zahl (int) | monatsvariabel | Jahr als eigene Spalte, aus `monat` abgeleitet – ermöglicht Filter/Gruppierung nur nach Jahr | 0 | 2024, 2025 |
+| `monat_idx` | Zahl (int) | monatsvariabel | Monat als eigene Spalte (1–12), unabhängig vom Jahr – ermöglicht Filter/Gruppierung nur nach Kalendermonat (z. B. "alle Umsätze im Juni, beide Jahre") | 0 | 1 – 12 |
 | `wettbewerber_preis_eur` | Zahl (float) | monatsvariabel | Preis des stärksten Wettbewerbers in diesem Monat | 0 | 1,28 – 164,70 |
 | `marketingbudget_eur` | Zahl (float) | monatsvariabel | Eingesetztes Marketingbudget in diesem Monat | 432 | 0 – ca. 237 |
 | `kampagne_aktiv` | Zahl (0/1) | monatsvariabel | Ob in diesem Monat eine Marketingkampagne lief | 0 | 0 = nein, 1 = ja |
@@ -69,6 +70,16 @@ Das wurde empirisch geprüft (siehe Abschnitt 3).
   wurden, können dieselben vier Zeitpunkte in den drei abgeleiteten
   Spalten noch die alten (fehlerhaften) Werte enthalten – das sollte vor
   der Modellierung geprüft und ggf. neu berechnet werden.
+- **`jahr` und `monat_idx` für Marketing-Auswertungen:** Statt jedes
+  Mal die Kombination `monat` (z. B. `2024-06`) zu filtern, stehen Jahr
+  und Kalendermonat als eigene Spalten zur Verfügung. Beispiele:
+  `df[df["jahr"] == 2024]` liefert alle Zeilen eines Jahres ohne
+  12-fachen Filter über `monat`; `df[df["monat_idx"] == 6]` liefert
+  alle Juni-Werte über beide Jahre hinweg (z. B. für saisonale
+  Marketing-Auswertungen); `df.groupby("jahr")["umsatz_eur"].sum()`
+  bzw. `df.groupby("monat_idx")["umsatz_eur"].sum()` fassen direkt
+  zusammen. Die Spalte `monat` bleibt als eindeutiger Zeitschlüssel
+  (für Sortierung und Verknüpfung) zusätzlich erhalten.
 - **Zeitlicher Split:** Für eine echte Prognose darf beim Train/Test-Split
   ausschließlich chronologisch getrennt werden (z. B. 2024 = Training,
   2025 = Test), damit keine zukünftigen Informationen ins Training

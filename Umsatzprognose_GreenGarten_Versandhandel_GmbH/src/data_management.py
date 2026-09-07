@@ -284,9 +284,49 @@ df_verkaufe_clean.loc[unplausibel, "umsatz_eur"] = np.nan
 
 # %%
 # -------------------------------------------------------------------
-# 12. Bereinigten Datensatz speichern
+# 12. Jahr als eigene Spalte aus 'monat' ableiten
 # -------------------------------------------------------------------
-print("\n--- 12. Bereinigten Datensatz speichern ---")
+print("\n--- 12. Jahr aus 'monat' ableiten ---")
+
+# 'monat_idx' enthaelt bereits den Monat separat (1-12), aber keine
+# eigene Jahres-Spalte existiert bisher. Fuer Auswertungen wie "alle
+# Umsaetze eines Jahres" oder "alle Umsaetze eines bestimmten Monats
+# ueber beide Jahre hinweg" (z. B. fuer Marketing-Auswertungen) ist
+# eine eigene Jahres-Spalte praktischer, als jedes Mal den Text von
+# 'monat' zerlegen zu muessen.
+df_verkaufe_clean["jahr"] = df_verkaufe_clean["monat"].str[:4].astype(int)
+
+# Spaltenreihenfolge anpassen: 'jahr' direkt neben 'monat' und
+# 'monat_idx' einsortieren, damit die drei zusammengehoerigen
+# Zeitspalten nebeneinander stehen.
+spalten_reihenfolge = [
+    "produkt_id", "kategorie", "hersteller",
+    "monat", "jahr", "monat_idx",
+    "preis_eur", "wettbewerber_preis_eur", "marketingbudget_eur",
+    "kampagne_aktiv", "lagerbestand",
+    "bewertungen_durchschnitt", "bewertungen_anzahl",
+    "vormonat_umsatz_eur", "letzte_3_monate_umsatz_eur_avg",
+    "vorjahr_monat_umsatz_eur", "umsatz_eur",
+]
+df_verkaufe_clean = df_verkaufe_clean[spalten_reihenfolge]
+
+print("Beispiel:")
+print(df_verkaufe_clean[["monat", "jahr", "monat_idx"]].head(3))
+print("\nEindeutige Jahre:", sorted(df_verkaufe_clean["jahr"].unique().tolist()))
+
+print("\nBeispiel-Auswertungen mit den neuen Spalten:")
+print("Gesamtumsatz je Jahr (Filter nur ueber 'jahr', ohne 'monat'):")
+print(df_verkaufe_clean.groupby("jahr")["umsatz_eur"].sum())
+print("\nGesamtumsatz je Kalendermonat, beide Jahre zusammengefasst "
+      "(Filter nur ueber 'monat_idx', ohne 'jahr'):")
+print(df_verkaufe_clean.groupby("monat_idx")["umsatz_eur"].sum())
+
+
+# %%
+# -------------------------------------------------------------------
+# 13. Bereinigten Datensatz speichern
+# -------------------------------------------------------------------
+print("\n--- 13. Bereinigten Datensatz speichern ---")
 
 os.makedirs("data/interim", exist_ok=True)
 
