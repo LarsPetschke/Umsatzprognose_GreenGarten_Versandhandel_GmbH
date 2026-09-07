@@ -43,7 +43,7 @@ Das wurde empirisch geprüft (siehe Abschnitt 3).
 | `kampagne_aktiv` | Zahl (0/1) | monatsvariabel | Ob in diesem Monat eine Marketingkampagne lief | 0 | 0 = nein, 1 = ja |
 | `lagerbestand` | Zahl (int) | monatsvariabel | Lagerbestand am Monatsende (Stück) | 0 | 1 – 441 |
 | `vormonat_umsatz_eur` | Zahl (float) | abgeleitet | Umsatz des Vormonats desselben Produkts | 600 | siehe Abschnitt 3 |
-| `letzte_3_monate_umsatz_eur_avg` | Zahl (float) | abgeleitet | Ø Umsatz der letzten 3 Monate desselben Produkts | 1 | siehe Abschnitt 3 |
+| `letzte_3_monate_umsatz_eur_avg` | Zahl (float) | abgeleitet | Ø Umsatz der letzten 3 Monate desselben Produkts | 600 | siehe Abschnitt 3 |
 | `vorjahr_monat_umsatz_eur` | Zahl (float) | abgeleitet | Umsatz desselben Monats im Vorjahr | 7.200 | siehe Abschnitt 3 |
 | `umsatz_eur` | Zahl (float) | **Zielvariable** | Tatsächlicher Umsatz in diesem Monat (Prognoseziel) | 4 | 0 – 20.617,85 |
 
@@ -55,7 +55,7 @@ Das wurde empirisch geprüft (siehe Abschnitt 3).
 | `vorjahr_monat_umsatz_eur` | 7.200 | **Strukturell erklärbar:** betrifft exakt alle Zeilen des Jahres 2024 (600 × 12), da der Datensatz erst 2024 beginnt und somit kein Vorjahreswert existiert. |
 | `bewertungen_durchschnitt` | 576 | Fehlt vollständig für einzelne Produkte (Wert ist je Produkt konstant) – vermutlich Produkte ohne Kundenbewertungen. |
 | `marketingbudget_eur` | 432 | **Keine erkennbare Systematik:** fehlt sowohl bei aktiver als auch bei inaktiver Kampagne (390 von 12.769 inaktiven Zeilen, 42 von 1.631 aktiven Zeilen) – wird als einfache Datenlücke eingestuft, nicht als inhaltlich begründbar. |
-| `letzte_3_monate_umsatz_eur_avg` | 1 | Einzelfall, nicht weiter untersucht. |
+| `letzte_3_monate_umsatz_eur_avg` | 600 | **Strukturell erklärbar (nach Korrektur):** identisch zu `vormonat_umsatz_eur` – der erste Monat eines Produkts kann keinen 3-Monats-Durchschnitt haben. **Export-Fehler behoben:** Ursprünglich waren bei 599 dieser 600 Zeilen trotzdem Werte eingetragen (die auch nicht dem eigenen Umsatz der Zeile entsprachen, also nicht plausibel herleitbar waren) – laut Projekt-Brief-Definition wurden diese auf NaN korrigiert (`src/data_management.py`, Schritt 12). |
 | `umsatz_eur` | 4 | Keine echten Fehlwerte, sondern die vier von uns korrigierten Ausreißer (zwei Platzhalterwerte 999.999 / 750.000, zwei negative Werte -1 / -150), die bewusst auf NaN gesetzt wurden statt die Zeilen zu löschen. |
 
 ## 4. Hinweise für die weitere Verarbeitung (EDA / Modellierung)

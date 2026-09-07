@@ -284,9 +284,33 @@ df_verkaufe_clean.loc[unplausibel, "umsatz_eur"] = np.nan
 
 # %%
 # -------------------------------------------------------------------
-# 12. Jahr als eigene Spalte aus 'monat' ableiten
+# 12. 'letzte_3_monate_umsatz_eur_avg' fuer Erstmonate korrigieren
 # -------------------------------------------------------------------
-print("\n--- 12. Jahr aus 'monat' ableiten ---")
+print("\n--- 12. Fehlerhafte 3-Monats-Durchschnitte im ersten Monat ---")
+
+# Laut Projekt-Brief bedeutet NaN in 'vormonat_umsatz_eur' den ersten
+# Verkaufsmonat eines Produkts (Neuprodukt ohne Historie). Fuer diese
+# Zeilen kann rein logisch auch kein Durchschnitt der letzten drei
+# Monate existieren. Pruefung zeigt jedoch einen Export-Fehler: Bei
+# 599 der 600 betroffenen Zeilen ist 'letzte_3_monate_umsatz_eur_avg'
+# trotzdem befuellt (mit Werten, die auch nicht dem eigenen Umsatz der
+# Zeile entsprechen - also nicht plausibel herleitbar sind).
+erster_monat = df_verkaufe_clean["vormonat_umsatz_eur"].isna()
+fehlerhaft = erster_monat & df_verkaufe_clean["letzte_3_monate_umsatz_eur_avg"].notna()
+print(f"Erster Monat je Produkt (kein Vormonat vorhanden): {erster_monat.sum()} Zeilen")
+print(f"Davon mit faelschlich befuelltem 3-Monats-Durchschnitt: {fehlerhaft.sum()}")
+
+df_verkaufe_clean.loc[erster_monat, "letzte_3_monate_umsatz_eur_avg"] = np.nan
+
+print("Nach der Korrektur fehlend (erwartet: identisch zu 'vormonat_umsatz_eur'):",
+      df_verkaufe_clean["letzte_3_monate_umsatz_eur_avg"].isna().sum())
+
+
+# %%
+# -------------------------------------------------------------------
+# 13. Jahr als eigene Spalte aus 'monat' ableiten
+# -------------------------------------------------------------------
+print("\n--- 13. Jahr aus 'monat' ableiten ---")
 
 # 'monat_idx' enthaelt bereits den Monat separat (1-12), aber keine
 # eigene Jahres-Spalte existiert bisher. Fuer Auswertungen wie "alle
@@ -324,9 +348,9 @@ print(df_verkaufe_clean.groupby("monat_idx")["umsatz_eur"].sum())
 
 # %%
 # -------------------------------------------------------------------
-# 13. Bereinigten Datensatz speichern
+# 14. Bereinigten Datensatz speichern
 # -------------------------------------------------------------------
-print("\n--- 13. Bereinigten Datensatz speichern ---")
+print("\n--- 14. Bereinigten Datensatz speichern ---")
 
 os.makedirs("data/interim", exist_ok=True)
 
