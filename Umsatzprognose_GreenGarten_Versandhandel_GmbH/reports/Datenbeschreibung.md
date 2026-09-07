@@ -35,7 +35,7 @@ Das wurde empirisch geprüft (siehe Abschnitt 3).
 | `preis_eur` | Zahl (float) | produktkonstant | Verkaufspreis in Euro (über den gesamten Zeitraum konstant je Produkt) | 0 | 1,50 – 143,50 |
 | `bewertungen_durchschnitt` | Zahl (float) | produktkonstant | Durchschnittliche Kundenbewertung | 576 | 1,5 – 5,0 |
 | `bewertungen_anzahl` | Zahl (int) | produktkonstant | Anzahl Kundenbewertungen | 0 | ca. 20 – 59 |
-| `monat` | Text | Schlüssel | Kalendermonat im Format `YYYY-MM` (Jahr und Monat kombiniert) | 0 | `2024-01` … `2025-12` |
+| `monat` | Datum (`datetime64`) | Schlüssel | Kalendermonat als echter Datums-Typ (jeweils 1. des Monats) | 0 | `2024-01-01` … `2025-12-01` |
 | `jahr` | Zahl (int) | monatsvariabel | Jahr als eigene Spalte, aus `monat` abgeleitet – ermöglicht Filter/Gruppierung nur nach Jahr | 0 | 2024, 2025 |
 | `monat_idx` | Zahl (int) | monatsvariabel | Monat als eigene Spalte (1–12), unabhängig vom Jahr – ermöglicht Filter/Gruppierung nur nach Kalendermonat (z. B. "alle Umsätze im Juni, beide Jahre") | 0 | 1 – 12 |
 | `wettbewerber_preis_eur` | Zahl (float) | monatsvariabel | Preis des stärksten Wettbewerbers in diesem Monat | 0 | 1,28 – 164,70 |
@@ -80,6 +80,12 @@ Das wurde empirisch geprüft (siehe Abschnitt 3).
   bzw. `df.groupby("monat_idx")["umsatz_eur"].sum()` fassen direkt
   zusammen. Die Spalte `monat` bleibt als eindeutiger Zeitschlüssel
   (für Sortierung und Verknüpfung) zusätzlich erhalten.
+- **`monat` beim Wiedereinlesen:** Da CSV-Dateien keine Datentypen
+  speichern, steht `monat` in der Datei als Text (`2024-01-01`). Beim
+  erneuten Einlesen unbedingt `pd.read_csv(..., parse_dates=["monat"])`
+  verwenden, damit wieder ein echter `datetime64`-Typ entsteht (nicht
+  `dtype=str` – das war nur der Workaround für den ursprünglichen
+  Punkt-Format-Bug und ist mit dem jetzigen Format nicht mehr nötig).
 - **Zeitlicher Split:** Für eine echte Prognose darf beim Train/Test-Split
   ausschließlich chronologisch getrennt werden (z. B. 2024 = Training,
   2025 = Test), damit keine zukünftigen Informationen ins Training

@@ -131,13 +131,15 @@ print(muster.value_counts())
 
 
 def monat_vereinheitlichen(wert):
-    """Wandelt 'monat' unabhaengig vom Ursprungsformat in 'YYYY-MM' um.
+    """Wandelt 'monat' unabhaengig vom Ursprungsformat in einen echten
+    Datums-Typ (pandas Timestamp, jeweils der 1. des Monats) um.
 
-    Das Format 'YYYY-MM' wird bewusst gewaehlt (statt z. B. 'MM.YYYY'):
-    Pandas liest 'MM.YYYY' beim erneuten Einlesen der CSV-Datei sonst als
-    Kommazahl ein (z. B. wird "01.2024" zu 1.2024), da der Punkt als
-    Dezimaltrenner interpretiert wird. 'YYYY-MM' ist dagegen eindeutig als
-    Text erkennbar und zusaetzlich chronologisch sortierbar.
+    Eine reine Text-Vereinheitlichung (z. B. auf 'YYYY-MM') wuerde das
+    Datum zwar lesbar machen, aber keinen "echten Datums-Typ" ergeben,
+    wie es die Definition of Done verlangt: Sortierung, Zeitraum-Filter
+    (z. B. df[df['monat'].between(...)]) und Differenzen zwischen Monaten
+    funktionieren mit einem echten datetime64-Typ direkt, ohne Text zu
+    zerlegen.
     """
     text = str(wert).replace("/", ".").replace("-", ".")
     erster_teil, zweiter_teil = text.split(".")
@@ -145,15 +147,22 @@ def monat_vereinheitlichen(wert):
         jahr, monat_zahl = erster_teil, zweiter_teil
     else:                               # Format war 'MM.YYYY' oder 'MM/YYYY' -> Reihenfolge tauschen
         monat_zahl, jahr = erster_teil, zweiter_teil
-    return f"{jahr}-{int(monat_zahl):02d}"
+    return pd.Timestamp(year=int(jahr), month=int(monat_zahl), day=1)
 
 
 df_verkaufe_clean["monat"] = df_verkaufe_clean["monat"].apply(monat_vereinheitlichen)
 
 print("\nBeispiele nach der Vereinheitlichung:")
 print(df_verkaufe_clean["monat"].head(5))
-noch_abweichend = (~df_verkaufe_clean["monat"].str.match(r"^\d{4}-\d{2}$")).sum()
-print(f"Verbleibende, nicht konforme Werte: {noch_abweichend}")
+print("Datentyp von 'monat':", df_verkaufe_clean["monat"].dtype)
+noch_abweichend = df_verkaufe_clean["monat"].isna().sum()
+print(f"Nicht umwandelbare Werte (NaT): {noch_abweichend}")
+
+# Hinweis fuer alle, die 'verkaufe_clean.csv' spaeter erneut einlesen:
+# CSV kennt keine Datentypen, beim Speichern wird 'monat' als Text
+# (z. B. "2024-01-01") abgelegt. Beim Wiedereinlesen daher unbedingt
+# pd.read_csv(..., parse_dates=["monat"]) verwenden, damit der Datums-Typ
+# erhalten bleibt (nicht dtype=str, siehe Bug-Fix weiter oben in Sprint 1).
 
 
 # %%
@@ -318,7 +327,7 @@ print("\n--- 13. Jahr aus 'monat' ableiten ---")
 # ueber beide Jahre hinweg" (z. B. fuer Marketing-Auswertungen) ist
 # eine eigene Jahres-Spalte praktischer, als jedes Mal den Text von
 # 'monat' zerlegen zu muessen.
-df_verkaufe_clean["jahr"] = df_verkaufe_clean["monat"].str[:4].astype(int)
+df_verkaufe_clean["jahr"] = df_verkaufe_clean["monat"].dt.year
 
 # Spaltenreihenfolge anpassen: 'jahr' direkt neben 'monat' und
 # 'monat_idx' einsortieren, damit die drei zusammengehoerigen
@@ -355,7 +364,7 @@ print("\n--- 14. Bereinigten Datensatz speichern ---")
 os.makedirs("data/interim", exist_ok=True)
 
 INTERIM_PATH = "data/interim/verkaufe_clean.csv"
-df_verkaufe_clean.to_csv(INTERIM_PATH, index=False)
+df_verkaufe_clean.to_csv(INTERIM_PATH, index=False, date_format="%Y-%m-%d")
 
 print(f"Bereinigter Datensatz gespeichert unter: {INTERIM_PATH}")
 print(f"Finale Form: {df_verkaufe_clean.shape[0]} Zeilen, "
