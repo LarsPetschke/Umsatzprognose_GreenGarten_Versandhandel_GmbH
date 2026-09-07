@@ -14,6 +14,7 @@ import pandas as pd
 import numpy as np
 import os
 
+# %%
 # -------------------------------------------------------------------
 # 1. Rohdaten laden
 # -------------------------------------------------------------------
@@ -26,6 +27,7 @@ df_verkaufe_raw = pd.read_csv(path)
 
 print("=== Datensatz erfolgreich geladen ===\n")
 
+# %%
 # -------------------------------------------------------------------
 # 2. Überblick über Struktur und Spalten
 # -------------------------------------------------------------------
@@ -39,6 +41,7 @@ print(df_verkaufe_raw.columns.tolist())
 print("\nDatentypen der Spalten:")
 print(df_verkaufe_raw.dtypes)
 
+# %%
 # -------------------------------------------------------------------
 # 3. Beispielzeilen anzeigen
 # -------------------------------------------------------------------
@@ -46,6 +49,7 @@ print(df_verkaufe_raw.dtypes)
 print("\n=== Erste fünf Zeilen des Datensatzes ===")
 print(df_verkaufe_raw.head())
 
+# %%
 # -------------------------------------------------------------------
 # 4. Fehlende Werte untersuchen
 # -------------------------------------------------------------------
@@ -53,6 +57,7 @@ print(df_verkaufe_raw.head())
 print("\n=== Fehlende Werte pro Spalte ===")
 print(df_verkaufe_raw.isna().sum())
 
+# %%
 # -------------------------------------------------------------------
 # 5. Einzigartige Werte pro Spalte (erste 20)
 # -------------------------------------------------------------------
@@ -65,6 +70,7 @@ for col in df_verkaufe_raw.columns:
 print("\n=== Untersuchung abgeschlossen ===")
 
 
+# %%
 # =====================================================================
 # TEIL 2: DATENQUALITAET DOKUMENTIEREN UND BEHEBEN
 # =====================================================================
@@ -101,6 +107,7 @@ print("\n\n=== TEIL 2: Datenqualitaet dokumentieren und beheben ===")
 
 df_verkaufe_clean = df_verkaufe_raw.copy()
 
+# %%
 # -------------------------------------------------------------------
 # 6. Datumsformate in 'monat' vereinheitlichen
 # -------------------------------------------------------------------
@@ -130,6 +137,7 @@ noch_abweichend = (~df_verkaufe_clean["monat"].str.match(r"^\d{2}\.\d{4}$")).sum
 print(f"Verbleibende, nicht konforme Werte: {noch_abweichend}")
 
 
+# %%
 # -------------------------------------------------------------------
 # 7. Preisangabe 'preis_eur' bereinigen
 # -------------------------------------------------------------------
@@ -152,6 +160,7 @@ print("\nKennzahlen nach der Bereinigung:")
 print(df_verkaufe_clean["preis_eur"].describe())
 
 
+# %%
 # -------------------------------------------------------------------
 # 8. Lagerbestand 'lagerbestand' bereinigen
 # -------------------------------------------------------------------
@@ -173,6 +182,7 @@ print("\nKennzahlen nach der Bereinigung:")
 print(df_verkaufe_clean["lagerbestand"].describe())
 
 
+# %%
 # -------------------------------------------------------------------
 # 9. Schreibweisen in 'kategorie' vereinheitlichen
 # -------------------------------------------------------------------
@@ -214,6 +224,7 @@ print(df_verkaufe_clean["kategorie"].value_counts())
 print("Nicht zuordenbare Werte:", df_verkaufe_clean["kategorie"].isna().sum())
 
 
+# %%
 # -------------------------------------------------------------------
 # 10. Vollstaendige Duplikate entfernen
 # -------------------------------------------------------------------
@@ -229,6 +240,7 @@ df_verkaufe_clean = df_verkaufe_clean.drop_duplicates()
 print(f"Zeilen nach Entfernen der Duplikate: {len(df_verkaufe_clean)}")
 
 
+# %%
 # -------------------------------------------------------------------
 # 11. Unplausible Werte in 'umsatz_eur' markieren
 # -------------------------------------------------------------------
@@ -251,6 +263,7 @@ print(f"\nAls fehlerhaft markierte Werte: {unplausibel.sum()}")
 df_verkaufe_clean.loc[unplausibel, "umsatz_eur"] = np.nan
 
 
+# %%
 # -------------------------------------------------------------------
 # 12. Bereinigten Datensatz speichern
 # -------------------------------------------------------------------
