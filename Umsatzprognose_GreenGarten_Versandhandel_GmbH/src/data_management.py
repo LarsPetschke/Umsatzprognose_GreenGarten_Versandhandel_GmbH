@@ -91,24 +91,26 @@ print("\n=== Untersuchung abgeschlossen ===")
 #   11. Zwei unplausible Werte in 'umsatz_eur' (999.999 und 750.000)
 #       sowie zwei negative Werte (-1 und -150)
 #
-# Fehlende Werte in folgenden Spalten werden NICHT als Fehler behandelt
-# und bleiben bewusst als fehlend (NaN) erhalten - die genaue Ursache
-# wurde je Spalte einzeln geprueft:
+# Fehlende Werte wurden je Spalte einzeln auf ihre Ursache geprueft
+# (nicht pauschal aufgefuellt) und je nach Ursache unterschiedlich
+# behandelt - Details, Zahlen und die neuen Flag-Spalten in Schritt 14:
 #
-#   - 'vormonat_umsatz_eur' (600 fehlend): strukturell bedingt, betrifft
-#     exakt den ersten Monat (2024-01) jedes der 600 Produkte, fuer den
-#     es keinen Vormonat gibt.
-#   - 'vorjahr_monat_umsatz_eur' (7.200 fehlend): strukturell bedingt,
-#     betrifft exakt alle Zeilen des Jahres 2024, da fuer 2024 kein
-#     Vorjahreswert im Datensatz vorhanden ist (Datensatz beginnt 2024).
-#   - 'bewertungen_durchschnitt' (576 fehlend): fehlt vollstaendig fuer
-#     einzelne Produkte (der Wert ist je Produkt konstant ueber alle
-#     Monate) - vermutlich Produkte ohne Kundenbewertungen.
+#   - 'vormonat_umsatz_eur' (600 fehlend) und 'vorjahr_monat_umsatz_eur'
+#     (7.200 fehlend): strukturell bedingt (kein Vormonat/-jahr in der
+#     Zeitreihe vorhanden, siehe oben). Bleiben bewusst NaN, da ein
+#     Mean-/Median-Ersatz eine nicht existierende Historie vortaeuschen
+#     wuerde; stattdessen Flags 'ist_neuprodukt' / 'hat_vorjahreswert'.
+#   - 'letzte_3_monate_umsatz_eur_avg' (600 fehlend nach Schritt 12):
+#     folgt direkt aus 'vormonat_umsatz_eur' (kein 3-Monats-Durchschnitt
+#     ohne Vormonat moeglich) - bereits durch 'ist_neuprodukt' abgedeckt,
+#     keine eigene Behandlung noetig.
+#   - 'bewertungen_durchschnitt' (576 fehlend): ist je Produkt konstant
+#     ueber alle Monate (Pruefung in Schritt 14) - fehlende Werte werden
+#     daher aus anderen Monaten desselben Produkts rekonstruiert statt
+#     geschaetzt (Flag: 'bewertungen_ergaenzt').
 #   - 'marketingbudget_eur' (432 fehlend): keine erkennbare Systematik
-#     feststellbar (fehlt sowohl bei aktiver als auch bei inaktiver
-#     Kampagne, 'kampagne_aktiv'), daher als einfache Datenluecke
-#     eingestuft statt als inhaltlich begruendbar.
-#   - 'letzte_3_monate_umsatz_eur_avg' (1 fehlend): Einzelfall.
+#     feststellbar (fehlt unabhaengig von Kategorie und 'kampagne_aktiv'),
+#     daher Median-Ersatz je Kategorie (Flag: 'marketingbudget_geschaetzt').
 #
 # Jedes Problem wird im Folgenden zunaechst anhand der Daten belegt und
 # direkt im Anschluss behoben. Die Originaldaten (df_verkaufe_raw)
@@ -399,9 +401,88 @@ print(df_verkaufe_clean.groupby("monat_idx")["umsatz_eur"].sum())
 
 # %%
 # -------------------------------------------------------------------
-# 14. Bereinigten Datensatz speichern
+# 14. Fehlende Werte gezielt behandeln (inkl. Flags)
 # -------------------------------------------------------------------
-print("\n--- 14. Bereinigten Datensatz speichern ---")
+print("\n--- 14. Fehlende Werte behandeln ---")
+
+# --- 14a. Strukturell fehlende Zeitreihen-Werte: NaN behalten + Flag ---
+# 'vormonat_umsatz_eur' / 'vorjahr_monat_umsatz_eur' bleiben NaN (siehe
+# Begruendung oben), da sonst eine nicht existierende Historie vorge-
+# taeuscht wuerde. Die Flags machen die fehlende Historie fuer Modelle,
+# die kein NaN verarbeiten koennen, trotzdem explizit nutzbar.
+df_verkaufe_clean["ist_neuprodukt"] = df_verkaufe_clean["vormonat_umsatz_eur"].isna().astype(int)
+df_verkaufe_clean["hat_vorjahreswert"] = df_verkaufe_clean["vorjahr_monat_umsatz_eur"].notna().astype(int)
+
+print("'ist_neuprodukt' = 1 bei:", df_verkaufe_clean["ist_neuprodukt"].sum(),
+      "Zeilen (erwartet: 600, ein erster Monat je Produkt)")
+print("'hat_vorjahreswert' = 0 bei:", (df_verkaufe_clean["hat_vorjahreswert"] == 0).sum(),
+      "Zeilen (erwartet: 7.200, alle Zeilen aus 2024)")
+
+# --- 14b. 'bewertungen_durchschnitt': produktkonstant, daher je Produkt auffuellen ---
+eindeutige_werte_je_produkt = df_verkaufe_clean.groupby("produkt_id")["bewertungen_durchschnitt"].nunique()
+print("\nProdukte mit genau einem eindeutigen (nicht-NaN) Bewertungswert:",
+      f"{(eindeutige_werte_je_produkt == 1).sum()} von {df_verkaufe_clean['produkt_id'].nunique()}")
+print("-> 'bewertungen_durchschnitt' ist je Produkt ueber alle Monate konstant; fehlende "
+      "Monate lassen sich daher aus anderen Monaten desselben Produkts exakt "
+      "rekonstruieren, statt sie zu schaetzen (kein Mean-/Median-Ersatz noetig).")
+
+df_verkaufe_clean["bewertungen_ergaenzt"] = df_verkaufe_clean["bewertungen_durchschnitt"].isna().astype(int)
+print("Fehlend vor Rekonstruktion:", df_verkaufe_clean["bewertungen_ergaenzt"].sum())
+
+df_verkaufe_clean["bewertungen_durchschnitt"] = (
+    df_verkaufe_clean.groupby("produkt_id")["bewertungen_durchschnitt"]
+    .transform(lambda s: s.ffill().bfill())
+)
+print("Verbleibend fehlend nach Rekonstruktion:",
+      df_verkaufe_clean["bewertungen_durchschnitt"].isna().sum())
+
+# --- 14c. 'marketingbudget_eur': keine Systematik erkennbar, Median je Kategorie ---
+fehlend_marketing = df_verkaufe_clean["marketingbudget_eur"].isna().sum()
+print(f"\n'marketingbudget_eur' fehlend: {fehlend_marketing} Zeilen "
+      f"({fehlend_marketing / len(df_verkaufe_clean):.1%})")
+
+median_je_kategorie = df_verkaufe_clean.groupby("kategorie")["marketingbudget_eur"].median()
+print("Median je Kategorie (zum Vergleich: globaler Median "
+      f"{df_verkaufe_clean['marketingbudget_eur'].median():.2f} Euro, "
+      f"Schiefe der Verteilung: {df_verkaufe_clean['marketingbudget_eur'].skew():.2f} "
+      "-> Median statt Mittelwert, da rechtsschief):")
+print(median_je_kategorie.round(2))
+
+df_verkaufe_clean["marketingbudget_geschaetzt"] = df_verkaufe_clean["marketingbudget_eur"].isna().astype(int)
+df_verkaufe_clean["marketingbudget_eur"] = df_verkaufe_clean["marketingbudget_eur"].fillna(
+    df_verkaufe_clean["kategorie"].map(median_je_kategorie)
+)
+print("Verbleibend fehlend nach Median-Ersatz:",
+      df_verkaufe_clean["marketingbudget_eur"].isna().sum())
+
+# --- 14d. Neue Flag-Spalten sinnvoll neben ihre Quellspalte einsortieren ---
+spalten_reihenfolge_mit_flags = [
+    "produkt_id", "kategorie", "hersteller",
+    "monat", "jahr", "monat_idx",
+    "preis_eur", "wettbewerber_preis_eur",
+    "marketingbudget_eur", "marketingbudget_geschaetzt",
+    "kampagne_aktiv", "lagerbestand",
+    "bewertungen_durchschnitt", "bewertungen_ergaenzt", "bewertungen_anzahl",
+    "vormonat_umsatz_eur", "ist_neuprodukt",
+    "letzte_3_monate_umsatz_eur_avg",
+    "vorjahr_monat_umsatz_eur", "hat_vorjahreswert",
+    "umsatz_eur",
+]
+df_verkaufe_clean = df_verkaufe_clean[spalten_reihenfolge_mit_flags]
+
+print("\nNeue Flag-Spalten ergaenzt: 'ist_neuprodukt', 'hat_vorjahreswert', "
+      "'bewertungen_ergaenzt', 'marketingbudget_geschaetzt'.")
+print(f"Datensatz jetzt: {df_verkaufe_clean.shape[0]} Zeilen, {df_verkaufe_clean.shape[1]} Spalten.")
+print("Verbleibende NaN insgesamt je Spalte (nur Spalten mit NaN):")
+verbleibend = df_verkaufe_clean.isna().sum()
+print(verbleibend[verbleibend > 0])
+
+
+# %%
+# -------------------------------------------------------------------
+# 15. Bereinigten Datensatz speichern
+# -------------------------------------------------------------------
+print("\n--- 15. Bereinigten Datensatz speichern ---")
 
 os.makedirs("data/interim", exist_ok=True)
 

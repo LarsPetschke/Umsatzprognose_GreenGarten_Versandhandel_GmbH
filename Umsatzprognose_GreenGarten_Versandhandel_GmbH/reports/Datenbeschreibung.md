@@ -9,7 +9,7 @@ Diese Beschreibung bezieht sich auf den **bereinigten** Datensatz.
 | Merkmal | Wert |
 |---|---|
 | Zeilen | 14.400 |
-| Spalten | 17 |
+| Spalten | 21 (17 fachliche Spalten + 4 Flag-Spalten aus der Fehlwert-Behandlung, siehe Abschnitt 3) |
 | Ein Datensatz (eine Zeile) ist ... | **ein Produkt in einem Monat** |
 | Primärschlüssel (eindeutige Kombination) | `produkt_id` + `monat` |
 | Eindeutige Produkte | 600 (`PR-0000` bis `PR-0599`) |
@@ -25,7 +25,10 @@ zusätzlichen 30 Zeilen waren vollständige Duplikate und wurden entfernt
 Die Spalten gliedern sich in zwei Ebenen: **produktkonstante** Merkmale
 (ändern sich für ein Produkt über die 24 Monate nicht) und
 **monatsvariable** Merkmale (haben in jedem Monat einen eigenen Wert).
-Das wurde empirisch geprüft (siehe Abschnitt 3).
+Das wurde empirisch geprüft (siehe Abschnitt 4). Zusätzlich gibt es vier
+**Flag-Spalten** (0/1), die aus der Fehlwert-Behandlung in Schritt 14
+stammen und markieren, wo ein Wert fehlte bzw. ersetzt wurde (siehe
+Abschnitt 3).
 
 | Spalte | Typ | Ebene | Bedeutung | Fehlende Werte | Wertebereich / Beispiel |
 |---|---|---|---|---|---|
@@ -33,30 +36,96 @@ Das wurde empirisch geprüft (siehe Abschnitt 3).
 | `kategorie` | Text | produktkonstant | Produktkategorie (bereinigt aus 24 Schreibweisen) | 0 | Pflanzen, Werkzeuge, Saatgut, Toepfe, Duengemittel, Bewaesserung |
 | `hersteller` | Text | produktkonstant | Hersteller/Marke | 0 | Vivero, Floraplan, Garda Tools, GartenStern, Hortica, BioGruen |
 | `preis_eur` | Zahl (float) | produktkonstant | Verkaufspreis in Euro (über den gesamten Zeitraum konstant je Produkt) | 0 | 1,50 – 143,50 |
-| `bewertungen_durchschnitt` | Zahl (float) | produktkonstant | Durchschnittliche Kundenbewertung | 576 | 1,5 – 5,0 |
+| `bewertungen_durchschnitt` | Zahl (float) | produktkonstant | Durchschnittliche Kundenbewertung | 0 (ursprünglich 576, aufgefüllt – siehe Abschnitt 3) | 1,5 – 5,0 |
+| `bewertungen_ergaenzt` | Zahl (0/1), Flag | produktkonstant | 1 = Wert war ursprünglich fehlend und wurde rekonstruiert, 0 = Originalwert | 0 | 0 oder 1 |
 | `bewertungen_anzahl` | Zahl (int) | produktkonstant | Anzahl Kundenbewertungen | 0 | ca. 20 – 59 |
 | `monat` | Datum (`datetime64`) | Schlüssel | Kalendermonat als echter Datums-Typ (jeweils 1. des Monats) | 0 | `2024-01-01` … `2025-12-01` |
 | `jahr` | Zahl (int) | monatsvariabel | Jahr als eigene Spalte, aus `monat` abgeleitet – ermöglicht Filter/Gruppierung nur nach Jahr | 0 | 2024, 2025 |
 | `monat_idx` | Zahl (int) | monatsvariabel | Monat als eigene Spalte (1–12), unabhängig vom Jahr – ermöglicht Filter/Gruppierung nur nach Kalendermonat (z. B. "alle Umsätze im Juni, beide Jahre") | 0 | 1 – 12 |
 | `wettbewerber_preis_eur` | Zahl (float) | monatsvariabel | Preis des stärksten Wettbewerbers in diesem Monat | 0 | 1,28 – 164,70 |
-| `marketingbudget_eur` | Zahl (float) | monatsvariabel | Eingesetztes Marketingbudget in diesem Monat | 432 | 0 – ca. 237 |
+| `marketingbudget_eur` | Zahl (float) | monatsvariabel | Eingesetztes Marketingbudget in diesem Monat | 0 (ursprünglich 432, aufgefüllt – siehe Abschnitt 3) | 0 – ca. 237 |
+| `marketingbudget_geschaetzt` | Zahl (0/1), Flag | monatsvariabel | 1 = Wert war ursprünglich fehlend und wurde per Median-Ersatz geschätzt, 0 = Originalwert | 0 | 0 oder 1 |
 | `kampagne_aktiv` | Zahl (0/1) | monatsvariabel | Ob in diesem Monat eine Marketingkampagne lief | 0 | 0 = nein, 1 = ja |
 | `lagerbestand` | Zahl (int) | monatsvariabel | Lagerbestand am Monatsende (Stück) | 0 | 1 – 441 |
-| `vormonat_umsatz_eur` | Zahl (float) | abgeleitet | Umsatz des Vormonats desselben Produkts | 600 | siehe Abschnitt 3 |
-| `letzte_3_monate_umsatz_eur_avg` | Zahl (float) | abgeleitet | Ø Umsatz der letzten 3 Monate desselben Produkts | 600 | siehe Abschnitt 3 |
-| `vorjahr_monat_umsatz_eur` | Zahl (float) | abgeleitet | Umsatz desselben Monats im Vorjahr | 7.200 | siehe Abschnitt 3 |
+| `vormonat_umsatz_eur` | Zahl (float) | abgeleitet | Umsatz des Vormonats desselben Produkts | 600 (bewusst NaN – siehe Abschnitt 3) | siehe Abschnitt 4 |
+| `ist_neuprodukt` | Zahl (0/1), Flag | abgeleitet | 1 = erster Verkaufsmonat des Produkts (kein Vormonat vorhanden), 0 = sonst | 0 | 0 oder 1 |
+| `letzte_3_monate_umsatz_eur_avg` | Zahl (float) | abgeleitet | Ø Umsatz der letzten 3 Monate desselben Produkts | 600 (bewusst NaN, deckungsgleich mit `ist_neuprodukt`) | siehe Abschnitt 4 |
+| `vorjahr_monat_umsatz_eur` | Zahl (float) | abgeleitet | Umsatz desselben Monats im Vorjahr | 7.200 (bewusst NaN – siehe Abschnitt 3) | siehe Abschnitt 4 |
+| `hat_vorjahreswert` | Zahl (0/1), Flag | abgeleitet | 1 = Vorjahreswert vorhanden, 0 = nicht vorhanden (alle Zeilen aus 2024) | 0 | 0 oder 1 |
 | `umsatz_eur` | Zahl (float) | **Zielvariable** | Tatsächlicher Umsatz in diesem Monat (Prognoseziel) | 4 | 0 – 20.617,85 |
 
-## 3. Ursache der fehlenden Werte (einzeln geprüft, nicht pauschal angenommen)
+## 3. Behandlung fehlender Werte (Strategie, Umsetzung und Flags)
 
-| Spalte | Fehlend | Ursache |
-|---|---|---|
-| `vormonat_umsatz_eur` | 600 | **Strukturell erklärbar:** betrifft exakt den ersten Monat (`2024-01`) jedes der 600 Produkte – hier existiert kein Vormonat. |
-| `vorjahr_monat_umsatz_eur` | 7.200 | **Strukturell erklärbar:** betrifft exakt alle Zeilen des Jahres 2024 (600 × 12), da der Datensatz erst 2024 beginnt und somit kein Vorjahreswert existiert. |
-| `bewertungen_durchschnitt` | 576 | Fehlt vollständig für einzelne Produkte (Wert ist je Produkt konstant) – vermutlich Produkte ohne Kundenbewertungen. |
-| `marketingbudget_eur` | 432 | **Keine erkennbare Systematik:** fehlt sowohl bei aktiver als auch bei inaktiver Kampagne (390 von 12.769 inaktiven Zeilen, 42 von 1.631 aktiven Zeilen) – wird als einfache Datenlücke eingestuft, nicht als inhaltlich begründbar. |
-| `letzte_3_monate_umsatz_eur_avg` | 600 | **Strukturell erklärbar (nach Korrektur):** identisch zu `vormonat_umsatz_eur` – der erste Monat eines Produkts kann keinen 3-Monats-Durchschnitt haben. **Export-Fehler behoben:** Ursprünglich waren bei 599 dieser 600 Zeilen trotzdem Werte eingetragen (die auch nicht dem eigenen Umsatz der Zeile entsprachen, also nicht plausibel herleitbar waren) – laut Projekt-Brief-Definition wurden diese auf NaN korrigiert (`src/data_management.py`, Schritt 12). |
-| `umsatz_eur` | 4 | Keine echten Fehlwerte, sondern die vier von uns korrigierten Ausreißer (zwei Platzhalterwerte 999.999 / 750.000, zwei negative Werte -1 / -150), die bewusst auf NaN gesetzt wurden statt die Zeilen zu löschen. |
+Fehlende Werte wurden **je Spalte einzeln auf ihre Ursache geprüft**
+und erst danach entschieden, ob und wie sie ersetzt werden – ein
+pauschaler Mean-/Median-Ersatz über alle Spalten hinweg hätte an
+mehreren Stellen falsche Signale erzeugt. Umgesetzt in
+`src/data_management.py`, Schritt 14.
+
+### 3.1 Strukturell fehlend → NaN bleibt, plus Flag
+
+`vormonat_umsatz_eur` (600 fehlend) und `vorjahr_monat_umsatz_eur`
+(7.200 fehlend) fehlen nicht zufällig, sondern weil zu diesem Zeitpunkt
+schlicht noch keine Historie existieren *kann* (erster Verkaufsmonat
+eines Produkts bzw. erstes Jahr des Datensatzes ohne Vorjahr). Ein
+Auffüllen mit Mean oder Median würde eine Historie vortäuschen, die es
+nicht gibt, und ein Prognosemodell würde daraus ein falsches Signal
+lernen ("ähnlicher Umsatz wie im Vormonat", obwohl es den Vormonat gar
+nicht gab). Deshalb bleiben die Werte `NaN`. Damit Modelle, die kein
+`NaN` verarbeiten können (z. B. lineare Regression), diese Information
+trotzdem nutzen können, wurden zwei binäre Flags ergänzt:
+
+- `ist_neuprodukt` = 1 in genau den 600 Zeilen mit fehlendem
+  `vormonat_umsatz_eur` (ein erster Monat je Produkt).
+- `hat_vorjahreswert` = 0 in genau den 7.200 Zeilen des Jahres 2024.
+
+`letzte_3_monate_umsatz_eur_avg` (600 fehlend, siehe Schritt 12) folgt
+direkt aus `vormonat_umsatz_eur` (ohne Vormonat kein 3-Monats-Schnitt
+möglich) und ist damit deckungsgleich mit `ist_neuprodukt` – eine
+eigene Behandlung war nicht nötig.
+
+Baumbasierte Modelle (z. B. LightGBM, XGBoost, CatBoost) verarbeiten
+`NaN` ohnehin nativ und können zusätzlich von den Flags profitieren;
+bei linearen Modellen sollten die drei NaN-Spalten vor dem Training auf
+Basis der Flags behandelt werden (z. B. 0 einsetzen und ausschließlich
+über den Flag steuern lassen, welches Gewicht das Modell dem beimisst).
+
+### 3.2 `bewertungen_durchschnitt` (576 fehlend) → je Produkt rekonstruiert
+
+Geprüft wurde, ob der Wert innerhalb eines Produkts über die 24 Monate
+schwankt: Bei allen 600 Produkten gibt es **genau einen** eindeutigen,
+nicht-fehlenden Wert – die Bewertung ist also je Produkt konstant. Ein
+fehlender Monatswert ist damit kein unbekannter Wert, sondern lediglich
+an dieser Stelle nicht mitgeschrieben, obwohl er aus anderen Monaten
+desselben Produkts exakt bekannt ist. Statt einer Schätzung (Mean/
+Median) wurde der Wert daher je `produkt_id` per Forward-/Backward-Fill
+rekonstruiert (`groupby("produkt_id").transform(ffill().bfill())`).
+Ergebnis: 0 verbleibende Fehlwerte. Der Flag `bewertungen_ergaenzt`
+markiert die 576 rekonstruierten Zeilen, damit nachvollziehbar bleibt,
+welche Werte nicht aus der Originalerhebung stammen.
+
+### 3.3 `marketingbudget_eur` (432 fehlend) → Median je Kategorie
+
+Geprüft wurde, ob die fehlenden Werte mit `kategorie` oder
+`kampagne_aktiv` zusammenhängen: Die Fehlquote liegt in beiden Gruppen
+bei rund 3 % (inaktive Kampagne: 391 von 12.769 Zeilen; aktive
+Kampagne: 42 von 1.596 Zeilen) – kein erkennbarer Zusammenhang. Auch
+die Mediane je Kategorie liegen eng beieinander (85,58 € bis 90,72 €
+gegenüber einem globalen Median von 88,09 €). Die Verteilung ist leicht
+rechtsschief (Skew ≈ 0,35), weshalb der **Median statt des
+Mittelwerts** verwendet wurde – er ist robuster gegenüber den wenigen
+hohen Werten am oberen Rand der Verteilung. Fehlende Werte wurden mit
+dem Median der jeweiligen `kategorie` aufgefüllt. Ergebnis: 0
+verbleibende Fehlwerte. Der Flag `marketingbudget_geschaetzt` markiert
+die 432 geschätzten Zeilen.
+
+### 3.4 `umsatz_eur` (4 fehlend)
+
+Keine echten Fehlwerte, sondern die vier korrigierten Ausreißer (zwei
+Platzhalterwerte 999.999 / 750.000, zwei negative Werte -1 / -150), die
+bewusst auf `NaN` gesetzt wurden statt die Zeilen zu löschen (Details:
+Abschnitt 5). Diese vier bleiben unverändert `NaN` – hierfür wäre jede
+Schätzung (Mean/Median) eine Erfindung von Umsatzzahlen, die es nie gab.
 
 ## 4. Ausreißer in der Zielvariable `umsatz_eur` (Detail)
 
@@ -101,6 +170,13 @@ korrigiert werden.
   und `bewertungen_anzahl` ändern sich in diesem Datensatz über die Zeit
   nicht (geprüft: 0 von 600 Produkten mit abweichenden Werten). Für die
   Modellierung sind das reine Produktmerkmale, keine Zeitreihenmerkmale.
+- **Flag-Spalten vor der Modellierung sichten:** `ist_neuprodukt`,
+  `hat_vorjahreswert`, `bewertungen_ergaenzt` und
+  `marketingbudget_geschaetzt` sind reine Meta-Informationen aus der
+  Datenaufbereitung (Schritt 14). Sie sollten je nach Modelltyp bewusst
+  einbezogen (z. B. als zusätzliches Feature, ob ein Wert geschätzt war)
+  oder vor dem Training wieder entfernt werden – sie sind keine
+  fachlichen Merkmale des Produkts oder Verkaufsmonats.
 - **Zielvariable und ihre Ableitungen:** `vormonat_umsatz_eur`,
   `letzte_3_monate_umsatz_eur_avg` und `vorjahr_monat_umsatz_eur` sind
   inhaltlich aus `umsatz_eur` abgeleitet. **Geprüft (Schritt 11 in
