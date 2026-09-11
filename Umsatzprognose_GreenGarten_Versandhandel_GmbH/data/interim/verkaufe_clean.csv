@@ -1,4 +1,4 @@
-Produkt-ID,Kategorie,Hersteller,Monat,Jahr,Kalendermonat,Preis [€],Wettbewerberpreis [€],Marketingbudget [€],Marketingbudget geschätzt,Kampagne aktiv,Lagerbestand [Stück],Bewertung Durchschnitt,Bewertung ergänzt,Anzahl Bewertungen,Umsatz Vormonat [€],Neues Produkt,Durchschnitt 3 Vormonate [€],Hat 3-Monats-Durchschnitt,Umsatz Vorjahresmonat [€],Hat Vorjahreswert,Umsatz [€],Umsatz korrigiert
+produkt_id,kategorie,hersteller,monat,jahr,monat_idx,preis_eur,wettbewerber_preis_eur,marketingbudget_eur,marketingbudget_geschaetzt,kampagne_aktiv,lagerbestand,bewertungen_durchschnitt,bewertungen_ergaenzt,bewertungen_anzahl,vormonat_umsatz_eur,neues_produkt,letzte_3_monate_umsatz_eur_avg,hat_3_monats_durchschnitt,vorjahr_monat_umsatz_eur,hat_vorjahreswert,umsatz_eur,umsatz_korrigiert
 PR-0000,Saatgut,Hortica,2024-01-01,2024,1,1.5,1.41,89.61,0,0,67,3.7,0,39,,1,,0,,0,6.12,0
 PR-0000,Saatgut,Hortica,2024-02-01,2024,2,1.5,1.69,88.16,0,1,69,3.7,0,39,6.12,0,,0,,0,13.64,0
 PR-0000,Saatgut,Hortica,2024-03-01,2024,3,1.5,1.61,117.38,0,1,64,3.7,0,39,13.64,0,,0,,0,16.75,0
