@@ -12,7 +12,7 @@ Spalte) – siehe Abschnitt 3.2 im Notebook.
 
 ## 1. Umbenannte Original-Spalten (16)
 
-| Ursprünglich (`verkaufe.csv`) | Bereinigt (`verkaufe_clean_2.csv`) | Wofür steht die Spalte | Vorgenommene Korrektur |
+| Ursprünglich (`verkaufe.csv`) | Bereinigt (`verkaufe_clean.csv`) | Wofür steht die Spalte | Vorgenommene Korrektur |
 |---|---|---|---|
 | `produkt_id` | `Produkt-ID` | Eindeutige Kennung je Produkt (z. B. `PR-0000`), 600 unterschiedliche Werte. | Keine inhaltliche Korrektur, nur umbenannt. |
 | `kategorie` | `Kategorie` | Produktkategorie, normalisiert auf 6 einheitliche Werte (Pflanzen, Werkzeuge, Saatgut, Toepfe, Duengemittel, Bewaesserung). | 24 Schreibweisen-Varianten (Groß-/Kleinschreibung, Umlaute, Abkürzungen wie `Saat`/`DUENGER`) auf eine feste Zuordnung normalisiert. |
