@@ -1,10 +1,9 @@
-# Spalten-Mapping: `verkaufe.csv` → `verkaufe_clean_2.csv`
+# Spalten-Mapping: `verkaufe.csv` → `verkaufe_clean.csv`
 
-Bezieht sich auf `data_management.ipynb` (vormals `data_management_2.ipynb`)
-und dessen Ausgabe `data/interim/verkaufe_clean_2.csv`. 16 Rohspalten
-werden zu 23 bereinigten Spalten: die 16 Originalspalten (umbenannt,
-teils bereinigt) plus 7 neue Spalten (`Jahr` und 6 Flags, die
-Bereinigungen dokumentieren).
+Bezieht sich auf `data_management.ipynb` und dessen Ausgabe `data/interim/verkaufe_clean.csv`. 
+16 Rohspalten werden zu 23 bereinigten Spalten: 
+die 16 Originalspalten (umbenannt, teils bereinigt) plus 7 neue Spalten 
+(`Jahr` und 6 Flags, die Bereinigungen dokumentieren).
 
 **Hinweis vorab:** 30 komplett doppelte Zeilen wurden aus dem gesamten
 Datensatz entfernt (betrifft alle Spalten gemeinsam, keine einzelne
@@ -12,7 +11,7 @@ Spalte) – siehe Abschnitt 3.2 im Notebook.
 
 ## 1. Umbenannte Original-Spalten (16)
 
-| Ursprünglich (`verkaufe.csv`) | Bereinigt (`verkaufe_clean_2.csv`) | Wofür steht die Spalte | Vorgenommene Korrektur |
+| Ursprünglich (`verkaufe.csv`) | Bereinigt (`verkaufe_clean.csv`) | Wofür steht die Spalte | Vorgenommene Korrektur |
 |---|---|---|---|
 | `produkt_id` | `Produkt-ID` | Eindeutige Kennung je Produkt (z. B. `PR-0000`), 600 unterschiedliche Werte. | Keine inhaltliche Korrektur, nur umbenannt. |
 | `kategorie` | `Kategorie` | Produktkategorie, normalisiert auf 6 einheitliche Werte (Pflanzen, Werkzeuge, Saatgut, Toepfe, Duengemittel, Bewaesserung). | 24 Schreibweisen-Varianten (Groß-/Kleinschreibung, Umlaute, Abkürzungen wie `Saat`/`DUENGER`) auf eine feste Zuordnung normalisiert. |
