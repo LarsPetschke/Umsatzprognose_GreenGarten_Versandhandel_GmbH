@@ -1,10 +1,9 @@
 # Spalten-Mapping: `verkaufe.csv` → `verkaufe_clean.csv`
 
-Bezieht sich auf `data_management.ipynb` (vormals `data_management_2.ipynb`)
-und dessen Ausgabe `data/interim/verkaufe_clean_2.csv`. 16 Rohspalten
-werden zu 23 bereinigten Spalten: die 16 Originalspalten (umbenannt,
-teils bereinigt) plus 7 neue Spalten (`Jahr` und 6 Flags, die
-Bereinigungen dokumentieren).
+Bezieht sich auf `data_management.ipynb` und dessen Ausgabe `data/interim/verkaufe_clean.csv`. 
+16 Rohspalten werden zu 23 bereinigten Spalten: 
+die 16 Originalspalten (umbenannt, teils bereinigt) plus 7 neue Spalten 
+(`Jahr` und 6 Flags, die Bereinigungen dokumentieren).
 
 **Hinweis vorab:** 30 komplett doppelte Zeilen wurden aus dem gesamten
 Datensatz entfernt (betrifft alle Spalten gemeinsam, keine einzelne
