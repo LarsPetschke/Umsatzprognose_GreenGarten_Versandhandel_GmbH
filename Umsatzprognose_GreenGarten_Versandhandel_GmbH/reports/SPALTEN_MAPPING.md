@@ -1,4 +1,4 @@
-# Spalten-Mapping: `verkaufe.csv` → `verkaufe_clean_2.csv`
+# Spalten-Mapping: `verkaufe.csv` → `verkaufe_clean.csv`
 
 Bezieht sich auf `data_management.ipynb` (vormals `data_management_2.ipynb`)
 und dessen Ausgabe `data/interim/verkaufe_clean_2.csv`. 16 Rohspalten
