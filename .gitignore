@@ -1,5 +1,65 @@
-.venv/
-.idea/
+# -------------------------------------------------------------------
+# Python / Data Science
+# -------------------------------------------------------------------
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Jupyter Notebook Checkpoints
 .ipynb_checkpoints/
+
+# -------------------------------------------------------------------
+# IDE / Editor
+# -------------------------------------------------------------------
+# PyCharm
+.idea/
+
+# VSCode
+.vscode/
+
+# -------------------------------------------------------------------
+# Build / Packaging
+# -------------------------------------------------------------------
+dist/
+build/
+*.egg-info/
+*.egg
+
+# uv / Poetry / Pip
+uv.lock
+poetry.lock
+
+# -------------------------------------------------------------------
+# Temporary / Lockfiles
+# -------------------------------------------------------------------
+*.lock
+*_lock*
+*_lock_*
+*_idx*
+*_orighead*
+*_ORIG_HEAD*
+*_headlock*
+*_indexlock*
+_to_delete/
+
+# -------------------------------------------------------------------
+# Data files (interim results, not raw data)
+# -------------------------------------------------------------------
+data/interim/*.csv
+data/interim/*.parquet
+data/interim/*.xlsx
+
+# Raw data should NOT be ignored:
+# data/raw/*   <-- bleibt versioniert
+
+# -------------------------------------------------------------------
+# Misc
+# -------------------------------------------------------------------
+Claude outputs/
+script.py
